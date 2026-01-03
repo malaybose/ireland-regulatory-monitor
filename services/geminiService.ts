@@ -70,8 +70,12 @@ export const fetchRegulatoryUpdates = async (): Promise<{ updates: RegulatoryUpd
       },
     });
 
-    const text = response.text || "";
-    const cleanText = text.replace(/```json|```/g, "").trim();
+    const responseText = response.text;
+    if (!responseText) {
+      throw new Error("AI returned an empty response.");
+    }
+    
+    const cleanText = responseText.replace(/```json|```/g, "").trim();
     const data = JSON.parse(cleanText || '{"updates": []}');
     
     return {
@@ -117,10 +121,16 @@ export const generateAggregatedAnalysis = async (updates: RegulatoryUpdate[]): P
         }
       }
     });
-    const text = response.text || "";
-    const cleanText = text.replace(/```json|```/g, "").trim();
+
+    const responseText = response.text;
+    if (!responseText) {
+      return null;
+    }
+
+    const cleanText = responseText.replace(/```json|```/g, "").trim();
     return JSON.parse(cleanText || '{}');
   } catch (e) {
+    console.error("Analysis generation error:", e);
     return null;
   }
 };
