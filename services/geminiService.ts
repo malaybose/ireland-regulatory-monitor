@@ -28,7 +28,6 @@ const MOCK_UPDATES: RegulatoryUpdate[] = [
 
 export const fetchRegulatoryUpdates = async (): Promise<{ updates: RegulatoryUpdate[], groundingMetadata: any, log?: string }> => {
   const apiKey = process.env.API_KEY;
-  let log = "";
   
   if (!apiKey || apiKey === "undefined") {
     console.warn("API_KEY is not defined. Using simulated data.");
@@ -71,8 +70,9 @@ export const fetchRegulatoryUpdates = async (): Promise<{ updates: RegulatoryUpd
       },
     });
 
-    const cleanText = response.text.replace(/```json|```/g, "").trim();
-    const data = JSON.parse(cleanText);
+    const text = response.text || "";
+    const cleanText = text.replace(/```json|```/g, "").trim();
+    const data = JSON.parse(cleanText || '{"updates": []}');
     
     return {
       updates: data.updates && data.updates.length > 0 ? data.updates : MOCK_UPDATES,
@@ -102,7 +102,7 @@ export const generateAggregatedAnalysis = async (updates: RegulatoryUpdate[]): P
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: `Provide a executive risk summary for these updates: ${JSON.stringify(updates)}`,
+      contents: `Provide an executive risk summary for these updates: ${JSON.stringify(updates)}`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -117,7 +117,9 @@ export const generateAggregatedAnalysis = async (updates: RegulatoryUpdate[]): P
         }
       }
     });
-    return JSON.parse(response.text.replace(/```json|```/g, "").trim());
+    const text = response.text || "";
+    const cleanText = text.replace(/```json|```/g, "").trim();
+    return JSON.parse(cleanText || '{}');
   } catch (e) {
     return null;
   }
